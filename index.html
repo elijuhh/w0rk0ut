@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>My Workout Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #c8f542;
+    --text: #f0f0f0;
+    --muted: #888;
+    --strength-bg: #1a1f10;
+    --strength-accent: #c8f542;
+    --cardio-bg: #0f1a1f;
+    --cardio-accent: #42c8f5;
+    --warn: #f5a742;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; max-width: 430px; margin: 0 auto; min-height: 100vh; padding-bottom: 80px; }
+
+  header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; }
+  .header-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px; color: var(--text); line-height: 1; }
+  .header-title span { color: var(--accent); }
+  .header-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .day-dot { text-align: center; cursor: pointer; }
+  .day-dot .dlabel { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .day-dot .dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 9px; font-weight: 600; border: 1.5px solid transparent; transition: all 0.15s; }
+  .day-dot.strength .dot { background: var(--strength-bg); border-color: var(--strength-accent); color: var(--strength-accent); }
+  .day-dot.cardio .dot { background: var(--cardio-bg); border-color: var(--cardio-accent); color: var(--cardio-accent); }
+  .day-dot.rest .dot { background: var(--surface); border-color: var(--border); color: var(--muted); }
+  .day-dot.strength.active .dot { background: var(--strength-accent); color: #0f0f0f; transform: scale(1.1); }
+  .day-dot.cardio.active .dot { background: var(--cardio-accent); color: #0f0f0f; transform: scale(1.1); }
+  .day-dot.rest.active .dot { background: var(--border); color: var(--text); transform: scale(1.1); }
+
+  .tabs { display: flex; padding: 0 20px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--border); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .content { display: none; padding: 20px; }
+  .content.visible { display: block; }
+
+  .day-header { margin-bottom: 20px; }
+  .day-type-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; margin-bottom: 10px; }
+  .badge-strength { background: var(--strength-bg); color: var(--strength-accent); border: 1px solid var(--strength-accent); }
+  .badge-cardio { background: var(--cardio-bg); color: var(--cardio-accent); border: 1px solid var(--cardio-accent); }
+  .badge-rest { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .day-name { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 0.5px; line-height: 1.1; }
+  .day-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin: 20px 0 10px; }
+
+  .ex-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+  .ex-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; gap: 10px; }
+  .ex-num { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--border); min-width: 22px; }
+  .ex-info { flex: 1; }
+  .ex-name-text { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .ex-note { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .ex-pill { border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+  .pill-strength { border: 1px solid #3a4a20; color: var(--strength-accent); background: var(--strength-bg); }
+  .pill-cardio { border: 1px solid #1a3a4a; color: var(--cardio-accent); background: var(--cardio-bg); }
+  .pill-neutral { border: 1px solid var(--border); color: var(--muted); background: var(--surface2); }
+
+  /* Weight logging */
+  .weight-panel { border-top: 1px solid var(--border); padding: 10px 14px 12px; background: #161616; }
+  .wp-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .wp-label { font-size: 11px; color: var(--muted); }
+  .wp-last { font-size: 11px; color: var(--strength-accent); font-weight: 500; }
+  .wp-row { display: flex; align-items: center; gap: 8px; }
+  .wp-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 16px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; -webkit-appearance: none; appearance: none; }
+  .wp-input:focus { border-color: var(--strength-accent); }
+  .wp-input::placeholder { color: #555; font-size: 14px; }
+  .wp-unit { font-size: 13px; color: var(--muted); }
+  .wp-btn { background: var(--strength-accent); color: #0f0f0f; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .wp-btn:active { opacity: 0.75; }
+  .wp-flash { font-size: 11px; color: var(--strength-accent); margin-top: 5px; display: none; }
+  .wp-hist { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .hist-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 9px; font-size: 11px; }
+  .hist-chip .hw { color: var(--text); font-weight: 500; }
+  .hist-chip .hd { color: #555; margin-left: 3px; }
+
+  .note-card { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 13px; color: var(--muted); line-height: 1.65; margin-top: 4px; }
+  .note-card strong { color: var(--text); font-weight: 500; }
+  .warn-card { background: #1f1700; border-left: 3px solid var(--warn); border-radius: 0 10px 10px 0; padding: 12px 14px; font-size: 13px; color: #c4913a; line-height: 1.65; margin-top: 12px; }
+  .warn-card strong { color: var(--warn); font-weight: 500; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 10px; text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent); line-height: 1; }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+
+  .tips-list { display: flex; flex-direction: column; gap: 8px; }
+  .tip-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 12px; }
+  .tip-icon { font-size: 16px; min-width: 20px; margin-top: 1px; }
+  .tip-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .tip-text span { color: var(--muted); display: block; font-size: 12px; margin-top: 2px; }
+
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 430px; margin: 0 auto; background: #111; border-top: 1px solid var(--border); display: flex; z-index: 100; }
+  .nav-btn { flex: 1; padding: 12px 4px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 500; color: var(--muted); transition: color 0.15s; }
+  .nav-btn .nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+  .nav-btn.active { color: var(--accent); }
+
+  .rest-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 12px; }
+  .rest-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--muted); margin-bottom: 6px; }
+  .rest-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .rest-sub strong { color: var(--text); }
+
+  /* Log page */
+  .log-day-block { margin-bottom: 24px; }
+  .log-day-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--text); margin-bottom: 10px; letter-spacing: 0.5px; }
+  .log-ex-row { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 6px; }
+  .log-ex-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+  .log-entry { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry-date { color: var(--muted); font-size: 12px; }
+  .log-entry-weight { color: var(--strength-accent); font-weight: 500; }
+  .log-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 40px 20px; line-height: 1.8; }
+  .log-empty strong { color: var(--text); }
+  .clear-btn { background: transparent; border: 1px solid #3a1a1a; color: #c45; border-radius: 8px; padding: 10px 16px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 24px; width: 100%; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-title">MY <span>WORKOUT</span></div>
+    <div class="header-sub">4-day plan · blood sugar + weight loss</div>
+  </div>
+</header>
+
+<div class="week-strip">
+  <div class="day-dot strength" onclick="switchTab('mon')"><div class="dlabel">M</div><div class="dot">STR</div></div>
+  <div class="day-dot rest"     onclick="switchTab('tue')"><div class="dlabel">T</div><div class="dot">REST</div></div>
+  <div class="day-dot cardio"  onclick="switchTab('wed')"><div class="dlabel">W</div><div class="dot">CRD</div></div>
+  <div class="day-dot strength" onclick="switchTab('thu')"><div class="dlabel">T</div><div class="dot">STR</div></div>
+  <div class="day-dot rest"     onclick="switchTab('fri')"><div class="dlabel">F</div><div class="dot">REST</div></div>
+  <div class="day-dot cardio"  onclick="switchTab('sat')"><div class="dlabel">S</div><div class="dot">CRD</div></div>
+  <div class="day-dot rest"     onclick="switchTab('sun')"><div class="dlabel">S</div><div class="dot">REST</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab" onclick="switchTab('mon')">Monday</div>
+  <div class="tab" onclick="switchTab('wed')">Wednesday</div>
+  <div class="tab" onclick="switchTab('thu')">Thursday</div>
+  <div class="tab" onclick="switchTab('sat')">Saturday</div>
+  <div class="tab" onclick="switchTab('tips')">Tips</div>
+</div>
+
+<!-- MONDAY -->
+<div id="tab-mon" class="content">
+  <div class="day-header">
+    <div class="day-type-badge badge-strength">&#9679; Strength</div>
+    <div class="day-name">Monday<br>Upper Body</div>
+    <div class="day-desc">~45 min &nbsp;·&nbsp; 5 warm-up + 35 lifting + 5 cool-down</div>
+  </div>
+  <div class="section-label">Exercises</div>
+
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">01</div><div class="ex-info"><div class="ex-name-text">Warm-up walk or light bike</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">02</div><div class="ex-info"><div class="ex-name-text">Dumbbell chest press</div><div class="ex-note">or push-ups on knees to start</div></div><div class="ex-pill pill-strength">3 × 10–12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-chest"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-chest" type="number" placeholder="e.g. 30" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-chest')">Save</button></div><div class="wp-flash" id="flash-mon-chest">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-chest"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">03</div><div class="ex-info"><div class="ex-name-text">Seated cable row</div><div class="ex-note">or dumbbell bent-over row</div></div><div class="ex-pill pill-strength">3 × 10–12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-row"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-row" type="number" placeholder="e.g. 50" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-row')">Save</button></div><div class="wp-flash" id="flash-mon-row">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-row"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">04</div><div class="ex-info"><div class="ex-name-text">Dumbbell shoulder press</div></div><div class="ex-pill pill-strength">3 × 10–12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-shoulder"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-shoulder" type="number" placeholder="e.g. 25" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-shoulder')">Save</button></div><div class="wp-flash" id="flash-mon-shoulder">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-shoulder"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">05</div><div class="ex-info"><div class="ex-name-text">Lat pulldown</div><div class="ex-note">or assisted pull-up machine</div></div><div class="ex-pill pill-strength">3 × 10–12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-lat"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-lat" type="number" placeholder="e.g. 60" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-lat')">Save</button></div><div class="wp-flash" id="flash-mon-lat">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-lat"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">06</div><div class="ex-info"><div class="ex-name-text">Dumbbell bicep curl</div></div><div class="ex-pill pill-strength">2 × 12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-curl"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-curl" type="number" placeholder="e.g. 20" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-curl')">Save</button></div><div class="wp-flash" id="flash-mon-curl">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-curl"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">07</div><div class="ex-info"><div class="ex-name-text">Tricep rope pushdown</div></div><div class="ex-pill pill-strength">2 × 12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-mon-tri"></span></div><div class="wp-row"><input class="wp-input" id="input-mon-tri" type="number" placeholder="e.g. 35" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('mon-tri')">Save</button></div><div class="wp-flash" id="flash-mon-tri">&#10003; Saved!</div><div class="wp-hist" id="hist-mon-tri"></div></div>
+  </div>
+
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">08</div><div class="ex-info"><div class="ex-name-text">Stretching cool-down</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="note-card"><strong>Rest 60–90 sec between sets.</strong> Pick a weight where the last 2–3 reps are hard but form stays clean. Add 5 lbs when all 12 reps feel easy.</div>
+</div>
+
+<!-- TUESDAY -->
+<div id="tab-tue" class="content">
+  <div class="day-header"><div class="day-type-badge badge-rest">&#9679; Rest Day</div><div class="day-name">Tuesday<br>Active Recovery</div><div class="day-desc">Light movement only — let your muscles rebuild</div></div>
+  <div class="rest-block"><div class="rest-title">Recovery Day</div><div class="rest-sub">Aim for <strong>7,000+ steps</strong> of light walking today. No gym needed.<br><br>A 10–15 min walk <strong>after meals</strong> lowers blood sugar spikes by up to 30%.</div></div>
+  <div class="note-card"><strong>Soreness is normal.</strong> If your chest or back is sore from Monday, that's expected. Severe pain or dark urine — call your doctor.</div>
+</div>
+
+<!-- WEDNESDAY -->
+<div id="tab-wed" class="content">
+  <div class="day-header"><div class="day-type-badge badge-cardio">&#9679; Cardio</div><div class="day-name">Wednesday<br>Zone 2 Cardio</div><div class="day-desc">~40 min &nbsp;·&nbsp; Best for blood sugar + fat burning</div></div>
+  <div class="section-label">Exercises</div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">01</div><div class="ex-info"><div class="ex-name-text">Easy warm-up walk</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">02</div><div class="ex-info"><div class="ex-name-text">Brisk walk, stationary bike, or elliptical</div><div class="ex-note">keep pace steady — Zone 2 the whole time</div></div><div class="ex-pill pill-cardio">30 min</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">03</div><div class="ex-info"><div class="ex-name-text">Cool-down walk + light stretching</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="note-card"><strong>Talk test:</strong> Say a short sentence but you can't hold a full conversation. Target heart rate: <strong>100–130 bpm</strong>. A brisk walk at 3.5–4 mph counts perfectly.</div>
+</div>
+
+<!-- THURSDAY -->
+<div id="tab-thu" class="content">
+  <div class="day-header"><div class="day-type-badge badge-strength">&#9679; Strength</div><div class="day-name">Thursday<br>Lower Body</div><div class="day-desc">~45 min &nbsp;·&nbsp; Biggest blood sugar benefit of the week</div></div>
+  <div class="section-label">Exercises</div>
+
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">01</div><div class="ex-info"><div class="ex-name-text">Warm-up walk</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">02</div><div class="ex-info"><div class="ex-name-text">Goblet squat</div><div class="ex-note">dumbbell or kettlebell held at chest</div></div><div class="ex-pill pill-strength">3 × 10–12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-thu-squat"></span></div><div class="wp-row"><input class="wp-input" id="input-thu-squat" type="number" placeholder="e.g. 35" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('thu-squat')">Save</button></div><div class="wp-flash" id="flash-thu-squat">&#10003; Saved!</div><div class="wp-hist" id="hist-thu-squat"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">03</div><div class="ex-info"><div class="ex-name-text">Leg press machine</div></div><div class="ex-pill pill-strength">3 × 12</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-thu-legpress"></span></div><div class="wp-row"><input class="wp-input" id="input-thu-legpress" type="number" placeholder="e.g. 90" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('thu-legpress')">Save</button></div><div class="wp-flash" id="flash-thu-legpress">&#10003; Saved!</div><div class="wp-hist" id="hist-thu-legpress"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">04</div><div class="ex-info"><div class="ex-name-text">Romanian deadlift</div><div class="ex-note">dumbbells, hinge at hips, slight knee bend</div></div><div class="ex-pill pill-strength">3 × 10</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-thu-rdl"></span></div><div class="wp-row"><input class="wp-input" id="input-thu-rdl" type="number" placeholder="e.g. 40" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('thu-rdl')">Save</button></div><div class="wp-flash" id="flash-thu-rdl">&#10003; Saved!</div><div class="wp-hist" id="hist-thu-rdl"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">05</div><div class="ex-info"><div class="ex-name-text">Walking lunges</div></div><div class="ex-pill pill-strength">3 × 10/leg</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-thu-lunge"></span></div><div class="wp-row"><input class="wp-input" id="input-thu-lunge" type="number" placeholder="bodyweight = 0" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('thu-lunge')">Save</button></div><div class="wp-flash" id="flash-thu-lunge">&#10003; Saved!</div><div class="wp-hist" id="hist-thu-lunge"></div></div>
+  </div>
+
+  <div class="ex-card">
+    <div class="ex-row"><div class="ex-num">06</div><div class="ex-info"><div class="ex-name-text">Seated calf raises</div></div><div class="ex-pill pill-strength">3 × 15</div></div>
+    <div class="weight-panel"><div class="wp-top"><span class="wp-label">Log weight used</span><span class="wp-last" id="last-thu-calf"></span></div><div class="wp-row"><input class="wp-input" id="input-thu-calf" type="number" placeholder="e.g. 25" inputmode="decimal"><span class="wp-unit">lbs</span><button class="wp-btn" onclick="logWeight('thu-calf')">Save</button></div><div class="wp-flash" id="flash-thu-calf">&#10003; Saved!</div><div class="wp-hist" id="hist-thu-calf"></div></div>
+  </div>
+
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">07</div><div class="ex-info"><div class="ex-name-text">Cool-down + hip flexor stretch</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="note-card"><strong>Lower body is your highest-value training.</strong> Your quads, glutes, and hamstrings are the biggest glucose-absorbing muscles — building them pulls sugar out of your blood automatically.</div>
+</div>
+
+<!-- FRIDAY -->
+<div id="tab-fri" class="content">
+  <div class="day-header"><div class="day-type-badge badge-rest">&#9679; Rest Day</div><div class="day-name">Friday<br>Active Recovery</div><div class="day-desc">Light movement only</div></div>
+  <div class="rest-block"><div class="rest-title">Recovery Day</div><div class="rest-sub">Your legs will likely be sore from Thursday. Keep moving lightly — walk, stretch, or foam roll.<br><br>Aim for <strong>7,000+ steps</strong> today.</div></div>
+</div>
+
+<!-- SATURDAY -->
+<div id="tab-sat" class="content">
+  <div class="day-header"><div class="day-type-badge badge-cardio">&#9679; Cardio + Core</div><div class="day-name">Saturday<br>Cardio + Core</div><div class="day-desc">~45 min &nbsp;·&nbsp; Longer session + core stability work</div></div>
+  <div class="section-label">Exercises</div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">01</div><div class="ex-info"><div class="ex-name-text">Warm-up walk or easy bike</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">02</div><div class="ex-info"><div class="ex-name-text">Moderate cardio</div><div class="ex-note">walk, swim, bike, or elliptical at Zone 2</div></div><div class="ex-pill pill-cardio">25 min</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">03</div><div class="ex-info"><div class="ex-name-text">Plank hold</div><div class="ex-note">elbows on floor, body straight</div></div><div class="ex-pill pill-strength">3 × 20–30 sec</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">04</div><div class="ex-info"><div class="ex-name-text">Dead bug</div><div class="ex-note">slow, lower back stays flat on floor</div></div><div class="ex-pill pill-strength">3 × 10/side</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">05</div><div class="ex-info"><div class="ex-name-text">Bird dog</div><div class="ex-note">opposite arm + leg, hold 2 sec</div></div><div class="ex-pill pill-strength">3 × 10/side</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">06</div><div class="ex-info"><div class="ex-name-text">Glute bridge</div><div class="ex-note">squeeze at top, pause 1 sec</div></div><div class="ex-pill pill-strength">3 × 15</div></div></div>
+  <div class="ex-card"><div class="ex-row"><div class="ex-num">07</div><div class="ex-info"><div class="ex-name-text">Cool-down stretch</div></div><div class="ex-pill pill-neutral">5 min</div></div></div>
+  <div class="note-card"><strong>Core work protects your lower back</strong> during squats and deadlifts. These anti-rotation moves are far safer and more effective than crunches for beginners.</div>
+</div>
+
+<!-- SUNDAY -->
+<div id="tab-sun" class="content">
+  <div class="day-header"><div class="day-type-badge badge-rest">&#9679; Full Rest</div><div class="day-name">Sunday<br>Full Rest</div><div class="day-desc">Recovery is where the gains actually happen</div></div>
+  <div class="rest-block"><div class="rest-title">Rest &amp; Recharge</div><div class="rest-sub">Full rest today. Sleep, eat well, let your body rebuild. Aim for <strong>7–8 hours of sleep</strong> — poor sleep directly raises blood sugar.<br><br>A short evening walk is welcome but not required.</div></div>
+</div>
+
+<!-- TIPS -->
+<div id="tab-tips" class="content">
+  <div class="day-header"><div class="day-type-badge badge-rest">&#9679; Reference</div><div class="day-name">Key Tips &amp;<br>Guidelines</div><div class="day-desc">Statin + prediabetes specific rules</div></div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">150+</div><div class="stat-lbl">min cardio per week</div></div>
+    <div class="stat-box"><div class="stat-num">7%</div><div class="stat-lbl">body weight goal (~15 lbs)</div></div>
+    <div class="stat-box"><div class="stat-num">4</div><div class="stat-lbl">gym days per week</div></div>
+  </div>
+  <div class="section-label">Daily habits</div>
+  <div class="tips-list">
+    <div class="tip-row"><div class="tip-icon">🚶</div><div class="tip-text">Walk 10–15 min after meals<span>Cuts post-meal blood sugar spikes by up to 30%</span></div></div>
+    <div class="tip-row"><div class="tip-icon">💧</div><div class="tip-text">Drink 64+ oz of water daily<span>Especially important on atorvastatin</span></div></div>
+    <div class="tip-row"><div class="tip-icon">🌡️</div><div class="tip-text">Always warm up before lifting<span>5 min minimum — cold muscles tear more easily</span></div></div>
+    <div class="tip-row"><div class="tip-icon">🧘</div><div class="tip-text">Never skip your cool-down<span>Prevents dizziness and lowers injury risk</span></div></div>
+    <div class="tip-row"><div class="tip-icon">😴</div><div class="tip-text">7–8 hours sleep every night<span>Poor sleep raises blood sugar directly</span></div></div>
+    <div class="tip-row"><div class="tip-icon">📈</div><div class="tip-text">Add 5 lbs when 12 reps feel easy<span>Progressive overload = continued progress</span></div></div>
+    <div class="tip-row"><div class="tip-icon">📅</div><div class="tip-text">Check progress every 4 weeks<span>Weight, energy levels, and how clothes fit</span></div></div>
+  </div>
+  <div class="warn-card"><strong>Atorvastatin warning:</strong> Normal post-workout soreness is fine. Severe muscle pain, weakness, or dark/brown urine — stop and call your doctor immediately. Could be rhabdomyolysis, a rare but serious statin side effect.</div>
+</div>
+
+<!-- LOG PAGE -->
+<div id="tab-log" class="content">
+  <div class="day-header"><div class="day-type-badge badge-strength">&#9679; Progress</div><div class="day-name">Weight<br>Log</div><div class="day-desc">Your saved lifts — most recent first</div></div>
+  <div id="log-body"></div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-btn active" id="nav-workout" onclick="navSwitch('workout')"><span class="nav-icon">🏋️</span>Workouts</div>
+  <div class="nav-btn" id="nav-log" onclick="navSwitch('log')"><span class="nav-icon">📊</span>My Log</div>
+  <div class="nav-btn" id="nav-tips" onclick="navSwitch('tips')"><span class="nav-icon">📋</span>Tips</div>
+</nav>
+
+<script>
+var EX = {
+  'mon-chest':    { name:'Dumbbell chest press',    day:'Monday — Upper Body' },
+  'mon-row':      { name:'Seated cable row',         day:'Monday — Upper Body' },
+  'mon-shoulder': { name:'Dumbbell shoulder press',  day:'Monday — Upper Body' },
+  'mon-lat':      { name:'Lat pulldown',             day:'Monday — Upper Body' },
+  'mon-curl':     { name:'Dumbbell bicep curl',      day:'Monday — Upper Body' },
+  'mon-tri':      { name:'Tricep rope pushdown',     day:'Monday — Upper Body' },
+  'thu-squat':    { name:'Goblet squat',             day:'Thursday — Lower Body' },
+  'thu-legpress': { name:'Leg press machine',        day:'Thursday — Lower Body' },
+  'thu-rdl':      { name:'Romanian deadlift',        day:'Thursday — Lower Body' },
+  'thu-lunge':    { name:'Walking lunges',           day:'Thursday — Lower Body' },
+  'thu-calf':     { name:'Seated calf raises',       day:'Thursday — Lower Body' }
+};
+
+function getLog() { try { return JSON.parse(localStorage.getItem('wlog2')||'{}'); } catch(e) { return {}; } }
+function saveLog(d) { localStorage.setItem('wlog2', JSON.stringify(d)); }
+
+function logWeight(key) {
+  var inp = document.getElementById('input-'+key);
+  var val = inp.value.trim();
+  if (!val || isNaN(parseFloat(val))) { inp.focus(); return; }
+  var log = getLog();
+  if (!log[key]) log[key] = [];
+  var d = new Date();
+  var ds = (d.getMonth()+1)+'/'+d.getDate();
+  log[key].unshift({ w: parseFloat(val), d: ds });
+  if (log[key].length > 12) log[key] = log[key].slice(0,12);
+  saveLog(log);
+  inp.value = '';
+  var fl = document.getElementById('flash-'+key);
+  fl.style.display = 'block';
+  setTimeout(function(){ fl.style.display='none'; }, 1600);
+  renderHist(key, log[key]);
+}
+
+function renderHist(key, entries) {
+  var hEl = document.getElementById('hist-'+key);
+  var lEl = document.getElementById('last-'+key);
+  if (!hEl) return;
+  if (!entries || !entries.length) { hEl.innerHTML=''; if(lEl) lEl.textContent=''; return; }
+  if (lEl) lEl.textContent = 'Last: '+entries[0].w+' lbs';
+  var html='';
+  entries.slice(0,5).forEach(function(e){
+    html += '<div class="hist-chip"><span class="hw">'+e.w+' lbs</span><span class="hd">'+e.d+'</span></div>';
+  });
+  hEl.innerHTML = html;
+}
+
+function loadAllHist() {
+  var log = getLog();
+  Object.keys(EX).forEach(function(k){ renderHist(k, log[k]||[]); });
+}
+
+function renderLogPage() {
+  var log = getLog();
+  var days = {
+    'Monday — Upper Body':   ['mon-chest','mon-row','mon-shoulder','mon-lat','mon-curl','mon-tri'],
+    'Thursday — Lower Body': ['thu-squat','thu-legpress','thu-rdl','thu-lunge','thu-calf']
+  };
+  var html=''; var hasAny=false;
+  Object.keys(days).forEach(function(day){
+    var keys=days[day]; var dHtml='';
+    keys.forEach(function(k){
+      var entries=log[k];
+      if (!entries||!entries.length) return;
+      hasAny=true;
+      dHtml+='<div class="log-ex-row"><div class="log-ex-name">'+EX[k].name+'</div>';
+      entries.forEach(function(e){
+        dHtml+='<div class="log-entry"><span class="log-entry-date">'+e.d+'</span><span class="log-entry-weight">'+e.w+' lbs</span></div>';
+      });
+      dHtml+='</div>';
+    });
+    if (dHtml) html+='<div class="log-day-block"><div class="log-day-title">'+day+'</div>'+dHtml+'</div>';
+  });
+  if (!hasAny) {
+    document.getElementById('log-body').innerHTML='<div class="log-empty">No weights logged yet.<br><br>Go to <strong>Monday</strong> or <strong>Thursday</strong> and tap <strong>Save</strong> after each exercise to start tracking your progress here.</div>';
+  } else {
+    html+='<button class="clear-btn" onclick="clearLog()">Clear all log data</button>';
+    document.getElementById('log-body').innerHTML=html;
+  }
+}
+
+function clearLog() {
+  if (confirm('Clear all saved weight data? This cannot be undone.')) {
+    localStorage.removeItem('wlog2');
+    loadAllHist();
+    renderLogPage();
+  }
+}
+
+var DAY_ORDER = ['mon','tue','wed','thu','fri','sat','sun'];
+var DOTS, TABS_EL;
+
+function updateDots(id) {
+  document.querySelectorAll('.day-dot').forEach(function(d){ d.classList.remove('active'); });
+  var idx = DAY_ORDER.indexOf(id);
+  var dots = document.querySelectorAll('.day-dot');
+  if (idx>=0 && dots[idx]) dots[idx].classList.add('active');
+}
+
+function updateTabBar(id) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  var map={mon:0,wed:1,thu:2,sat:3,tips:4};
+  var tabs=document.querySelectorAll('.tab');
+  if (map[id]!==undefined) tabs[map[id]].classList.add('active');
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.content').forEach(function(c){ c.classList.remove('visible'); });
+  var el=document.getElementById('tab-'+id);
+  if (el) el.classList.add('visible');
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (id==='tips') { document.getElementById('nav-tips').classList.add('active'); }
+  else if (id==='log') { document.getElementById('nav-log').classList.add('active'); renderLogPage(); }
+  else { document.getElementById('nav-workout').classList.add('active'); updateDots(id); }
+  updateTabBar(id);
+}
+
+function navSwitch(s) {
+  if (s==='tips') switchTab('tips');
+  else if (s==='log') switchTab('log');
+  else {
+    var today=new Date().getDay();
+    var dm={0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
+    switchTab(dm[today]);
+  }
+}
+
+loadAllHist();
+var todayId = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'}[new Date().getDay()];
+switchTab(todayId);
+</script>
+</body>
+</html>
